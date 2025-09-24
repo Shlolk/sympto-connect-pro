@@ -1,50 +1,131 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock doctor data - in real app this would come from API
-const mockDoctors = [
-  {
-    id: 1,
-    name: "Dr. Sarah Johnson",
-    specialty: "Internal Medicine",
-    rating: 4.9,
-    experience: "15 years",
-    fees: "$150",
-    location: "Medical Center Downtown",
-    distance: "0.8 miles",
-    availability: "Available Today",
-    image: "👩‍⚕️"
-  },
-  {
-    id: 2,
-    name: "Dr. Michael Chen",
-    specialty: "Cardiology",
-    rating: 4.8,
-    experience: "12 years",
-    fees: "$200",
-    location: "Heart Care Clinic",
-    distance: "1.2 miles",
-    availability: "Available Tomorrow",
-    image: "👨‍⚕️"
-  },
-  {
-    id: 3,
-    name: "Dr. Emily Rodriguez",
-    specialty: "Family Medicine",
-    rating: 4.9,
-    experience: "10 years",
-    fees: "$120",
-    location: "Community Health Center",
-    distance: "2.1 miles",
-    availability: "Available Today",
-    image: "👩‍⚕️"
-  }
-];
+interface Doctor {
+  id: string;
+  name: string;
+  specialty: string;
+  experience_years: number;
+  rating: number;
+  consultation_fee: number;
+  location: string;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  bio: string | null;
+  is_available: boolean;
+}
 
 const DoctorMap = () => {
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+  const [appointmentDate, setAppointmentDate] = useState("");
+  const [appointmentTime, setAppointmentTime] = useState("");
+  const [appointmentNotes, setAppointmentNotes] = useState("");
+  const [bookingLoading, setBookingLoading] = useState(false);
+  
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchDoctors();
+  }, []);
+
+  const fetchDoctors = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("doctors")
+        .select("*")
+        .eq("is_available", true)
+        .order("rating", { ascending: false });
+
+      if (error) throw error;
+      setDoctors(data || []);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load doctors. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBookAppointment = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to book an appointment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!selectedDoctor || !appointmentDate || !appointmentTime) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setBookingLoading(true);
+
+    try {
+      const appointmentDateTime = new Date(`${appointmentDate}T${appointmentTime}`);
+      
+      const { error } = await supabase
+        .from("appointments")
+        .insert({
+          user_id: user.id,
+          doctor_id: selectedDoctor.id,
+          appointment_date: appointmentDateTime.toISOString(),
+          notes: appointmentNotes,
+          status: "scheduled",
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Appointment Booked Successfully!",
+        description: `Your appointment with ${selectedDoctor.name} has been scheduled.`,
+      });
+
+      // Reset form and close dialog
+      setAppointmentDate("");
+      setAppointmentTime("");
+      setAppointmentNotes("");
+      setSelectedDoctor(null);
+
+      // Scroll to appointments section
+      setTimeout(() => {
+        document.getElementById("appointments")?.scrollIntoView({ behavior: "smooth" });
+      }, 500);
+
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to book appointment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setBookingLoading(false);
+    }
+  };
   return (
-    <section className="py-20 bg-background">
+    <section id="doctors" className="py-20 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-foreground mb-4">
@@ -91,56 +172,121 @@ const DoctorMap = () => {
           <div className="space-y-4">
             <h3 className="text-2xl font-semibold text-foreground mb-6">Available Doctors</h3>
             
-            {mockDoctors.map((doctor) => (
-              <Card key={doctor.id} className="card-shadow hover:card-shadow-hover smooth-transition cursor-pointer hover:scale-[1.02]">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="text-3xl">{doctor.image}</div>
-                      <div>
-                        <CardTitle className="text-lg text-foreground">{doctor.name}</CardTitle>
-                        <p className="text-sm text-primary font-medium">{doctor.specialty}</p>
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardHeader>
+                      <div className="h-4 bg-muted rounded w-3/4"></div>
+                      <div className="h-3 bg-muted rounded w-1/2"></div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="h-3 bg-muted rounded"></div>
+                        <div className="h-3 bg-muted rounded w-2/3"></div>
                       </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              doctors.map((doctor) => (
+                <Card key={doctor.id} className="card-shadow hover:card-shadow-hover smooth-transition cursor-pointer hover:scale-[1.02]">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center">
+                          <span className="text-white text-xl">👨‍⚕️</span>
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg text-foreground">{doctor.name}</CardTitle>
+                          <p className="text-sm text-primary font-medium">{doctor.specialty}</p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        ⭐ {doctor.rating}
+                      </Badge>
                     </div>
-                    <Badge variant="secondary" className="text-xs">
-                      ⭐ {doctor.rating}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="text-muted-foreground">Experience:</div>
-                    <div className="text-foreground font-medium">{doctor.experience}</div>
-                    
-                    <div className="text-muted-foreground">Consultation:</div>
-                    <div className="text-foreground font-medium">{doctor.fees}</div>
-                    
-                    <div className="text-muted-foreground">Distance:</div>
-                    <div className="text-foreground font-medium">{doctor.distance}</div>
-                  </div>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="text-muted-foreground">Experience:</div>
+                      <div className="text-foreground font-medium">{doctor.experience_years} years</div>
+                      
+                      <div className="text-muted-foreground">Consultation:</div>
+                      <div className="text-foreground font-medium">${doctor.consultation_fee}</div>
+                      
+                      <div className="text-muted-foreground">Location:</div>
+                      <div className="text-foreground font-medium">{doctor.location}</div>
+                    </div>
 
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">📍 {doctor.location}</p>
-                    <Badge 
-                      variant={doctor.availability.includes("Today") ? "default" : "secondary"}
-                      className="text-xs"
-                    >
-                      {doctor.availability}
-                    </Badge>
-                  </div>
+                    {doctor.address && (
+                      <p className="text-sm text-muted-foreground">📍 {doctor.address}</p>
+                    )}
 
-                  <div className="flex gap-2">
-                    <Button variant="medical" className="flex-1 text-sm">
-                      Book Appointment
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      View Profile
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <div className="flex gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="medical" 
+                            className="flex-1 text-sm"
+                            onClick={() => setSelectedDoctor(doctor)}
+                          >
+                            Book Appointment
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Book Appointment with {doctor.name}</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor="date">Date</Label>
+                              <Input
+                                id="date"
+                                type="date"
+                                value={appointmentDate}
+                                onChange={(e) => setAppointmentDate(e.target.value)}
+                                min={new Date().toISOString().split('T')[0]}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="time">Time</Label>
+                              <Input
+                                id="time"
+                                type="time"
+                                value={appointmentTime}
+                                onChange={(e) => setAppointmentTime(e.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="notes">Notes (Optional)</Label>
+                              <Textarea
+                                id="notes"
+                                placeholder="Any additional notes about your symptoms or concerns..."
+                                value={appointmentNotes}
+                                onChange={(e) => setAppointmentNotes(e.target.value)}
+                              />
+                            </div>
+                            <Button 
+                              onClick={handleBookAppointment} 
+                              className="w-full"
+                              disabled={bookingLoading}
+                            >
+                              {bookingLoading ? "Booking..." : "Confirm Appointment"}
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                      <Button variant="outline" size="sm">
+                        View Profile
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </div>

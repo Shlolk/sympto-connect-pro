@@ -14,6 +14,107 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          appointment_date: string
+          consultation_type: string | null
+          created_at: string
+          doctor_id: string
+          id: string
+          notes: string | null
+          status: string
+          symptoms: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          appointment_date: string
+          consultation_type?: string | null
+          created_at?: string
+          doctor_id: string
+          id?: string
+          notes?: string | null
+          status?: string
+          symptoms?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          appointment_date?: string
+          consultation_type?: string | null
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          symptoms?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctors: {
+        Row: {
+          address: string | null
+          bio: string | null
+          consultation_fee: number | null
+          created_at: string
+          email: string | null
+          experience_years: number
+          id: string
+          image_url: string | null
+          is_available: boolean | null
+          location: string
+          name: string
+          phone: string | null
+          rating: number | null
+          specialty: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          bio?: string | null
+          consultation_fee?: number | null
+          created_at?: string
+          email?: string | null
+          experience_years?: number
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          location: string
+          name: string
+          phone?: string | null
+          rating?: number | null
+          specialty: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          bio?: string | null
+          consultation_fee?: number | null
+          created_at?: string
+          email?: string | null
+          experience_years?: number
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          location?: string
+          name?: string
+          phone?: string | null
+          rating?: number | null
+          specialty?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       found_reports: {
         Row: {
           created_at: string
@@ -48,6 +149,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      health_tips: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       items: {
         Row: {
@@ -120,6 +254,42 @@ export type Database = {
           email?: string | null
           id?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      symptoms: {
+        Row: {
+          created_at: string
+          date_reported: string | null
+          description: string
+          has_visited_doctor: boolean | null
+          id: string
+          prescription_image_url: string | null
+          previous_doctor_name: string | null
+          severity: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date_reported?: string | null
+          description: string
+          has_visited_doctor?: boolean | null
+          id?: string
+          prescription_image_url?: string | null
+          previous_doctor_name?: string | null
+          severity?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date_reported?: string | null
+          description?: string
+          has_visited_doctor?: boolean | null
+          id?: string
+          prescription_image_url?: string | null
+          previous_doctor_name?: string | null
+          severity?: number | null
           user_id?: string
         }
         Relationships: []

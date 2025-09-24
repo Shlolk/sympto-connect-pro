@@ -3,10 +3,79 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const SymptomInput = () => {
   const [hasVisitedDoctor, setHasVisitedDoctor] = useState<boolean | null>(null);
   const [symptoms, setSymptoms] = useState("");
+  const [previousDoctorName, setPreviousDoctorName] = useState("");
+  const [loading, setLoading] = useState(false);
+  
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const handleSubmit = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to submit your symptoms.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!symptoms.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please describe your symptoms.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from("symptoms")
+        .insert({
+          user_id: user.id,
+          description: symptoms.trim(),
+          has_visited_doctor: hasVisitedDoctor,
+          previous_doctor_name: hasVisitedDoctor ? previousDoctorName : null,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Symptoms Submitted Successfully!",
+        description: hasVisitedDoctor 
+          ? "We'll help you find follow-up options with your previous doctor." 
+          : "We're finding the best doctors near you based on your symptoms.",
+      });
+
+      // Scroll to doctors section
+      setTimeout(() => {
+        document.getElementById("doctors")?.scrollIntoView({ behavior: "smooth" });
+      }, 500);
+
+      // Reset form
+      setSymptoms("");
+      setPreviousDoctorName("");
+      setHasVisitedDoctor(null);
+
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to submit symptoms. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <section id="symptoms" className="py-20 bg-gradient-to-b from-background to-muted/30">
@@ -72,7 +141,11 @@ const SymptomInput = () => {
                       <label className="block text-sm font-medium text-foreground mb-2">
                         Previous Doctor's Name
                       </label>
-                      <Input placeholder="Dr. John Smith" />
+                      <Input 
+                        placeholder="Dr. John Smith" 
+                        value={previousDoctorName}
+                        onChange={(e) => setPreviousDoctorName(e.target.value)}
+                      />
                     </div>
                     
                     <div>
@@ -131,9 +204,15 @@ const SymptomInput = () => {
                 variant="hero" 
                 size="lg" 
                 className="w-full text-lg py-6"
-                disabled={!symptoms.trim() || hasVisitedDoctor === null}
+                disabled={!symptoms.trim() || hasVisitedDoctor === null || loading}
+                onClick={handleSubmit}
               >
-                {hasVisitedDoctor === true ? "Find Follow-up Options" : "Find Doctors Near Me"}
+                {loading 
+                  ? "Processing..." 
+                  : hasVisitedDoctor === true 
+                    ? "Find Follow-up Options" 
+                    : "Find Doctors Near Me"
+                }
               </Button>
             </CardContent>
           </Card>

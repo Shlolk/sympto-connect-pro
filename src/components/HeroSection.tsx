@@ -1,9 +1,30 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-medical.jpg";
 import medicalIcons from "@/assets/medical-icons.jpg";
 
 const HeroSection = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleReportSymptoms = () => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    document.getElementById("symptoms")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleUploadPrescription = () => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    document.getElementById("symptoms")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-hero">
       {/* Background Elements */}
@@ -38,10 +59,20 @@ const HeroSection = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button variant="hero" size="lg" className="text-lg px-8 py-6">
+              <Button 
+                variant="hero" 
+                size="lg" 
+                className="text-lg px-8 py-6"
+                onClick={handleReportSymptoms}
+              >
                 🩺 Report Symptoms
               </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-6 bg-white/10 border-white/30 text-white hover:bg-white hover:text-primary">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="text-lg px-8 py-6 bg-white/10 border-white/30 text-white hover:bg-white hover:text-primary"
+                onClick={handleUploadPrescription}
+              >
                 📋 Upload Prescription
               </Button>
             </div>
