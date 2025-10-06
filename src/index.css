@@ -163,6 +163,22 @@ All colors MUST be HSL for perfect theming.
   .pulse-slow {
     animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
+
+  /* Professional Text Gradients */
+  .text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glassmorphism Effect */
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
 }
 
 @layer base {
@@ -172,6 +188,12 @@ All colors MUST be HSL for perfect theming.
 
   body {
     @apply bg-background text-foreground smooth-transition;
+  }
+
+  /* Professional Scroll Behavior */
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 80px;
   }
 
   /* Healthcare Keyframes */
@@ -204,5 +226,26 @@ All colors MUST be HSL for perfect theming.
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
+  /* Professional Loading Skeleton */
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted) / 0.5) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite linear;
   }
 }

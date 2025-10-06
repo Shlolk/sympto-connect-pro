@@ -5,24 +5,27 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 interface Doctor {
   id: string;
   name: string;
   specialty: string;
-  experience_years: number;
+  experience: number;
   rating: number;
-  consultation_fee: number;
   location: string;
-  address: string | null;
-  phone: string | null;
-  email: string | null;
-  bio: string | null;
-  is_available: boolean;
+  latitude: number;
+  longitude: number;
+  available_slots: any;
+  created_at: string;
 }
 
 const DoctorMap = () => {
@@ -36,17 +39,34 @@ const DoctorMap = () => {
   
   const { user } = useAuth();
   const { toast } = useToast();
+  const sectionRef = useRef<HTMLElement>(null);
+  const doctorCardsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchDoctors();
   }, []);
+
+  useEffect(() => {
+    if (!sectionRef.current || !doctorCardsRef.current || loading) return;
+
+    gsap.from(doctorCardsRef.current.children, {
+      x: 50,
+      opacity: 0,
+      stagger: 0.15,
+      duration: 0.8,
+      ease: "power3.out",
+      scrollTrigger: {
+        trigger: doctorCardsRef.current,
+        start: "top 80%",
+      },
+    });
+  }, [loading]);
 
   const fetchDoctors = async () => {
     try {
       const { data, error } = await supabase
         .from("doctors")
         .select("*")
-        .eq("is_available", true)
         .order("rating", { ascending: false });
 
       if (error) throw error;
@@ -125,7 +145,7 @@ const DoctorMap = () => {
     }
   };
   return (
-    <section id="doctors" className="py-20 bg-background">
+    <section ref={sectionRef} id="doctors" className="py-20 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-foreground mb-4">
@@ -169,7 +189,7 @@ const DoctorMap = () => {
           </div>
 
           {/* Doctor List */}
-          <div className="space-y-4">
+          <div ref={doctorCardsRef} className="space-y-4">
             <h3 className="text-2xl font-semibold text-foreground mb-6">Available Doctors</h3>
             
             {loading ? (
@@ -190,8 +210,14 @@ const DoctorMap = () => {
                 ))}
               </div>
             ) : (
-              doctors.map((doctor) => (
-                <Card key={doctor.id} className="card-shadow hover:card-shadow-hover smooth-transition cursor-pointer hover:scale-[1.02]">
+              doctors.map((doctor, index) => (
+                <motion.div
+                  key={doctor.id}
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
+                >
+                  <Card className="card-shadow hover:card-shadow-hover smooth-transition cursor-pointer hover:scale-[1.02]">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
@@ -212,18 +238,11 @@ const DoctorMap = () => {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div className="text-muted-foreground">Experience:</div>
-                      <div className="text-foreground font-medium">{doctor.experience_years} years</div>
-                      
-                      <div className="text-muted-foreground">Consultation:</div>
-                      <div className="text-foreground font-medium">${doctor.consultation_fee}</div>
+                      <div className="text-foreground font-medium">{doctor.experience} years</div>
                       
                       <div className="text-muted-foreground">Location:</div>
                       <div className="text-foreground font-medium">{doctor.location}</div>
                     </div>
-
-                    {doctor.address && (
-                      <p className="text-sm text-muted-foreground">📍 {doctor.address}</p>
-                    )}
 
                     <div className="flex gap-2">
                       <Dialog>
@@ -285,6 +304,7 @@ const DoctorMap = () => {
                     </div>
                   </CardContent>
                 </Card>
+                </motion.div>
               ))
             )}
           </div>

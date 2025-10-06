@@ -14,7 +14,137 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          appointment_date: string
+          created_at: string
+          doctor_id: string
+          id: string
+          notes: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          appointment_date: string
+          created_at?: string
+          doctor_id: string
+          id?: string
+          notes?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          appointment_date?: string
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          notes?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctors: {
+        Row: {
+          available_slots: Json | null
+          created_at: string
+          experience: number
+          id: string
+          latitude: number
+          location: string
+          longitude: number
+          name: string
+          rating: number
+          specialty: string
+        }
+        Insert: {
+          available_slots?: Json | null
+          created_at?: string
+          experience: number
+          id?: string
+          latitude: number
+          location: string
+          longitude: number
+          name: string
+          rating: number
+          specialty: string
+        }
+        Update: {
+          available_slots?: Json | null
+          created_at?: string
+          experience?: number
+          id?: string
+          latitude?: number
+          location?: string
+          longitude?: number
+          name?: string
+          rating?: number
+          specialty?: string
+        }
+        Relationships: []
+      }
+      health_tips: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          icon: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          icon?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          icon?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      symptoms: {
+        Row: {
+          created_at: string
+          duration: string
+          id: string
+          severity: string
+          symptoms: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration: string
+          id?: string
+          severity: string
+          symptoms: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration?: string
+          id?: string
+          severity?: string
+          symptoms?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

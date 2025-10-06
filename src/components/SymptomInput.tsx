@@ -2,10 +2,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const SymptomInput = () => {
   const [hasVisitedDoctor, setHasVisitedDoctor] = useState<boolean | null>(null);
@@ -15,6 +20,25 @@ const SymptomInput = () => {
   
   const { user } = useAuth();
   const { toast } = useToast();
+  const sectionRef = useRef<HTMLElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!sectionRef.current || !cardRef.current) return;
+
+    gsap.from(cardRef.current, {
+      y: 100,
+      opacity: 0,
+      duration: 1,
+      ease: "power3.out",
+      scrollTrigger: {
+        trigger: sectionRef.current,
+        start: "top 70%",
+        end: "top 30%",
+        toggleActions: "play none none none",
+      },
+    });
+  }, []);
 
   const handleSubmit = async () => {
     if (!user) {
@@ -42,9 +66,9 @@ const SymptomInput = () => {
         .from("symptoms")
         .insert({
           user_id: user.id,
-          description: symptoms.trim(),
-          has_visited_doctor: hasVisitedDoctor,
-          previous_doctor_name: hasVisitedDoctor ? previousDoctorName : null,
+          symptoms: symptoms.trim(),
+          severity: hasVisitedDoctor ? "follow-up" : "new",
+          duration: "not specified",
         });
 
       if (error) throw error;
@@ -78,7 +102,7 @@ const SymptomInput = () => {
   };
 
   return (
-    <section id="symptoms" className="py-20 bg-gradient-to-b from-background to-muted/30">
+    <section ref={sectionRef} id="symptoms" className="py-20 bg-gradient-to-b from-background to-muted/30">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-foreground mb-4">
@@ -90,7 +114,7 @@ const SymptomInput = () => {
         </div>
 
         <div className="max-w-4xl mx-auto">
-          <Card className="card-shadow hover:card-shadow-hover smooth-transition">
+          <Card ref={cardRef} className="card-shadow hover:card-shadow-hover smooth-transition">
             <CardHeader>
               <CardTitle className="text-2xl text-center">Symptom Analysis</CardTitle>
             </CardHeader>
@@ -133,7 +157,12 @@ const SymptomInput = () => {
 
               {/* Conditional Content */}
               {hasVisitedDoctor === true && (
-                <div className="space-y-6 p-6 bg-secondary/10 rounded-lg border border-secondary/20 animate-slide-up">
+                <motion.div 
+                  className="space-y-6 p-6 bg-secondary/10 rounded-lg border border-secondary/20"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                >
                   <h3 className="text-xl font-semibold text-foreground">Previous Medical History</h3>
                   
                   <div className="space-y-4">
@@ -165,11 +194,16 @@ const SymptomInput = () => {
                   <Button variant="secondary" className="w-full">
                     🔄 Schedule Follow-up with Previous Doctor
                   </Button>
-                </div>
+                </motion.div>
               )}
 
               {hasVisitedDoctor === false && (
-                <div className="space-y-6 p-6 bg-accent/10 rounded-lg border border-accent/20 animate-slide-up">
+                <motion.div 
+                  className="space-y-6 p-6 bg-accent/10 rounded-lg border border-accent/20"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                >
                   <h3 className="text-xl font-semibold text-foreground">Find New Doctors</h3>
                   <p className="text-muted-foreground">
                     We'll analyze your symptoms and show you qualified doctors in your area who specialize in treating your condition.
@@ -196,7 +230,7 @@ const SymptomInput = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               )}
 
               {/* Submit Button */}
